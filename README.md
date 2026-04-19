@@ -94,6 +94,18 @@ smart-stadium-assistant/
 
 ## 🚀 How to Run
 
+1. Clone the repository:
+  https://github.com/aman-singh-ai/smart-stadium-assistant.git
+
+2. Open the project folder:
+   cd smart-stadium-assistant
+
+3. Open index.html in your browser
+
+OR
+
+👉 Live Demo:
+(https://smart-stadium-assistant.netlify.app/)
 ---
 
 ## 🛠️ Tech Stack
