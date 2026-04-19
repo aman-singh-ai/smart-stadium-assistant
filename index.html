@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Predictive Stadium Intelligence System — AI-powered crowd prediction, smart navigation, and real-time stadium insights." />
+  <title>Smart Stadium Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Particle canvas background -->
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- Background glows -->
+  <div class="bg-glow g1"></div>
+  <div class="bg-glow g2"></div>
+  <div class="bg-glow g3"></div>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header" id="header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Stadium arch shape -->
+            <rect x="3" y="16" width="30" height="16" rx="3" fill="url(#sb1)" opacity="0.9"/>
+            <!-- Roof arch -->
+            <path d="M3 18 Q18 4 33 18" fill="none" stroke="url(#sb2)" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Pitch -->
+            <rect x="9" y="20" width="18" height="9" rx="1.5" fill="rgba(0,180,80,0.35)" stroke="rgba(0,220,100,0.5)" stroke-width="1"/>
+            <line x1="18" y1="20" x2="18" y2="29" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>
+            <circle cx="18" cy="24.5" r="2" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>
+            <!-- AI dot glow -->
+            <circle cx="18" cy="10" r="3.5" fill="url(#sb3)" filter="url(#glow)"/>
+            <defs>
+              <linearGradient id="sb1" x1="3" y1="16" x2="33" y2="32">
+                <stop offset="0%" stop-color="#004aaa"/>
+                <stop offset="100%" stop-color="#001f66"/>
+              </linearGradient>
+              <linearGradient id="sb2" x1="3" y1="18" x2="33" y2="18">
+                <stop offset="0%" stop-color="#007fff"/>
+                <stop offset="100%" stop-color="#00c2ff"/>
+              </linearGradient>
+              <radialGradient id="sb3" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#00eeff"/>
+                <stop offset="100%" stop-color="#007fff"/>
+              </radialGradient>
+              <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="1.5" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-acronym">Smart Stadium</span>
+          <span class="brand-full">AI-Powered Venue Assistant</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="live-chip">
+          <span class="live-dot"></span>
+          <span class="live-label">LIVE</span>
+          <span class="live-sub" id="live-update-text">Crowd data updating…</span>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light/dark theme" title="Toggle theme">
+          <span class="theme-toggle-track">
+            <span class="theme-toggle-thumb">
+              <span class="theme-icon moon-icon">🌙</span>
+              <span class="theme-icon sun-icon">☀️</span>
+            </span>
+          </span>
+          <span class="theme-toggle-label" id="theme-toggle-label">Dark</span>
+        </button>
+
+        <div class="match-info">
+          <span class="match-icon">⚽</span>
+          <div>
+            <p class="match-title">City FC vs Lions</p>
+            <p class="match-time" id="match-time">88:23</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN DASHBOARD ===== -->
+  <main class="dashboard" id="main-dashboard">
+
+    <!-- LEFT COLUMN -->
+    <section class="col-left">
+
+      <!-- Seat navigation card -->
+      <div class="card" id="nav-card">
+        <div class="card-header">
+          <span class="card-icon">🧭</span>
+          <div>
+            <h2 class="card-title">Personalized Navigation</h2>
+            <p class="card-sub">Enter your seat for a custom route</p>
+          </div>
+        </div>
+        <div class="seat-input-row">
+          <input type="text" id="seat-input" class="seat-input" placeholder="Seat No. (e.g. B-12)" maxlength="6" autocomplete="off" />
+          <button class="seat-go-btn" id="seat-go-btn" onclick="navigateSeat()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+        <div class="nav-result" id="nav-result" style="display:none"></div>
+      </div>
+
+      <!-- Crowd Prediction Engine -->
+      <div class="card" id="prediction-card">
+        <div class="card-header">
+          <span class="card-icon">🧠</span>
+          <div>
+            <h2 class="card-title">Crowd Prediction Engine</h2>
+            <p class="card-sub">AI-simulated forecast · next 10 min</p>
+          </div>
+          <div class="ml-auto">
+            <span class="badge badge-ai">AI</span>
+          </div>
+        </div>
+        <div class="predictions-list" id="predictions-list">
+          <!-- dynamically inserted -->
+        </div>
+      </div>
+
+      <!-- Emergency Mode -->
+      <div class="card card-emergency" id="emergency-card">
+        <div class="emg-top">
+          <div>
+            <h2 class="card-title emg-title">🚨 Emergency Exit Protocol</h2>
+            <p class="card-sub">Activate for fastest evacuation route</p>
+          </div>
+          <button class="emg-btn" id="emg-btn" onclick="activateEmergency()">
+            ACTIVATE
+          </button>
+        </div>
+        <div class="emg-result" id="emg-result" style="display:none">
+          <div class="emg-steps" id="emg-steps"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- CENTER COLUMN — Stadium Map -->
+    <section class="col-center">
+      <div class="card map-card" id="map-card">
+        <div class="card-header">
+          <span class="card-icon">🗺️</span>
+          <div>
+            <h2 class="card-title">Live Stadium Map</h2>
+            <p class="card-sub">Real-time crowd density visualization</p>
+          </div>
+          <div class="map-legend ml-auto">
+            <span class="legend-item"><span class="dot dot-green"></span> Low</span>
+            <span class="legend-item"><span class="dot dot-yellow"></span> Med</span>
+            <span class="legend-item"><span class="dot dot-red"></span> High</span>
+          </div>
+        </div>
+
+        <div class="stadium-map-wrapper">
+          <svg class="stadium-svg" id="stadium-svg" viewBox="0 0 500 380" xmlns="http://www.w3.org/2000/svg">
+
+            <!-- Outer shell -->
+            <ellipse cx="250" cy="190" rx="230" ry="170" fill="none" stroke="rgba(0,180,255,0.25)" stroke-width="2"/>
+
+            <!-- Pitch -->
+            <ellipse cx="250" cy="190" rx="140" ry="100" fill="rgba(0,100,60,0.35)" stroke="rgba(0,200,100,0.4)" stroke-width="1.5"/>
+            <line x1="250" y1="90" x2="250" y2="290" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+            <circle cx="250" cy="190" r="30" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+            <circle cx="250" cy="190" r="4" fill="rgba(255,255,255,0.3)"/>
+
+            <!-- Goals -->
+            <rect x="180" y="175" width="15" height="30" rx="2" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+            <rect x="305" y="175" width="15" height="30" rx="2" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+
+            <!-- GATES — clickable zones -->
+            <!-- Gate 1 - Top -->
+            <g class="gate-zone" id="gate-1" data-gate="1" data-level="low" onclick="selectGate(1)">
+              <ellipse cx="250" cy="22" rx="55" ry="20" fill="rgba(0,220,100,0.18)" stroke="rgba(0,220,100,0.5)" stroke-width="1.5" class="gate-fill"/>
+              <text x="250" y="27" text-anchor="middle" fill="#00e67a" font-size="11" font-family="Inter" font-weight="600">GATE 1</text>
+            </g>
+            <!-- Gate 2 - Right -->
+            <g class="gate-zone" id="gate-2" data-gate="2" data-level="high" onclick="selectGate(2)">
+              <ellipse cx="477" cy="190" rx="20" ry="55" fill="rgba(255,60,60,0.2)" stroke="rgba(255,60,60,0.55)" stroke-width="1.5" class="gate-fill"/>
+              <text x="477" y="194" text-anchor="middle" fill="#ff4a4a" font-size="11" font-family="Inter" font-weight="600" transform="rotate(90,477,190)">GATE 2</text>
+              <!-- Pulse ring -->
+              <ellipse cx="477" cy="190" rx="20" ry="55" fill="none" stroke="rgba(255,60,60,0.4)" stroke-width="2" class="pulse-ring"/>
+            </g>
+            <!-- Gate 3 - Bottom -->
+            <g class="gate-zone" id="gate-3" data-gate="3" data-level="medium" onclick="selectGate(3)">
+              <ellipse cx="250" cy="358" rx="55" ry="20" fill="rgba(255,190,0,0.18)" stroke="rgba(255,190,0,0.5)" stroke-width="1.5" class="gate-fill"/>
+              <text x="250" y="363" text-anchor="middle" fill="#ffbe00" font-size="11" font-family="Inter" font-weight="600">GATE 3</text>
+            </g>
+            <!-- Gate 4 - Left -->
+            <g class="gate-zone" id="gate-4" data-gate="4" data-level="low" onclick="selectGate(4)">
+              <ellipse cx="23" cy="190" rx="20" ry="55" fill="rgba(0,220,100,0.18)" stroke="rgba(0,220,100,0.5)" stroke-width="1.5" class="gate-fill"/>
+              <text x="23" y="194" text-anchor="middle" fill="#00e67a" font-size="11" font-family="Inter" font-weight="600" transform="rotate(-90,23,190)">GATE 4</text>
+            </g>
+
+            <!-- Section labels -->
+            <text x="250" y="72" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="10" font-family="Inter">NORTH STAND</text>
+            <text x="250" y="318" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="10" font-family="Inter">SOUTH STAND</text>
+            <text x="418" y="194" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="10" font-family="Inter" transform="rotate(90,418,190)">EAST</text>
+            <text x="82" y="194" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="10" font-family="Inter" transform="rotate(-90,82,190)">WEST</text>
+
+            <!-- Food stall markers -->
+            <g class="poi-marker" id="poi-food-1" title="Food Stall A">
+              <circle cx="180" cy="55" r="8" fill="rgba(255,140,0,0.25)" stroke="rgba(255,140,0,0.7)" stroke-width="1.5"/>
+              <text x="180" y="59" text-anchor="middle" fill="#ffaa00" font-size="9">🍔</text>
+            </g>
+            <g class="poi-marker" id="poi-food-2" title="Food Stall B">
+              <circle cx="320" cy="55" r="8" fill="rgba(255,140,0,0.25)" stroke="rgba(255,140,0,0.7)" stroke-width="1.5"/>
+              <text x="320" y="59" text-anchor="middle" fill="#ffaa00" font-size="9">🍕</text>
+            </g>
+            <g class="poi-marker" id="poi-wash" title="Washroom">
+              <circle cx="440" cy="310" r="8" fill="rgba(0,140,255,0.25)" stroke="rgba(0,140,255,0.7)" stroke-width="1.5"/>
+              <text x="440" y="314" text-anchor="middle" fill="#00aaff" font-size="9">🚻</text>
+            </g>
+            <g class="poi-marker" id="poi-med" title="Medical">
+              <circle cx="60" cy="310" r="8" fill="rgba(255,60,60,0.25)" stroke="rgba(255,60,60,0.7)" stroke-width="1.5"/>
+              <text x="60" y="314" text-anchor="middle" fill="#ff4a4a" font-size="9">🏥</text>
+            </g>
+          </svg>
+
+          <!-- Gate info tooltip -->
+          <div class="gate-tooltip" id="gate-tooltip" style="display:none">
+            <div class="gt-header">
+              <span class="gt-name" id="gt-name">Gate 2</span>
+              <span class="gt-badge" id="gt-badge">HIGH</span>
+            </div>
+            <p class="gt-desc" id="gt-desc">Currently very crowded. Consider Gate 4.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN -->
+    <section class="col-right">
+
+      <!-- Live Stats -->
+      <div class="card" id="stats-card">
+        <div class="card-header">
+          <span class="card-icon">📊</span>
+          <h2 class="card-title">Live Stats</h2>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <p class="stat-val" id="stat-capacity">78<span class="stat-pct">%</span></p>
+            <p class="stat-label">Capacity</p>
+          </div>
+          <div class="stat-box">
+            <p class="stat-val" id="stat-crowd">42k</p>
+            <p class="stat-label">Attendees</p>
+          </div>
+          <div class="stat-box">
+            <p class="stat-val" id="stat-wait">5<span class="stat-pct">m</span></p>
+            <p class="stat-label">Food Wait</p>
+          </div>
+          <div class="stat-box">
+            <p class="stat-val" id="stat-exits">2</p>
+            <p class="stat-label">Open Gates</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="card" id="quick-card">
+        <div class="card-header">
+          <span class="card-icon">⚡</span>
+          <h2 class="card-title">Quick Actions</h2>
+        </div>
+        <div class="quick-grid">
+          <button class="q-btn q-food" id="qb-food" onclick="triggerQuickAction('food')">
+            <span class="q-icon">🍔</span>
+            <span class="q-label">Food</span>
+            <span class="q-badge" id="qb-food-badge">Gate 3</span>
+          </button>
+          <button class="q-btn q-wash" id="qb-wash" onclick="triggerQuickAction('toilet')">
+            <span class="q-icon">🚻</span>
+            <span class="q-label">Washroom</span>
+            <span class="q-badge" id="qb-wash-badge">Clean</span>
+          </button>
+          <button class="q-btn q-exit" id="qb-exit" onclick="triggerQuickAction('exit')">
+            <span class="q-icon">🚪</span>
+            <span class="q-label">Exit</span>
+            <span class="q-badge" id="qb-exit-badge">Gate 4</span>
+          </button>
+          <button class="q-btn q-seat" id="qb-seat" onclick="triggerQuickAction('seat')">
+            <span class="q-icon">💺</span>
+            <span class="q-label">My Seat</span>
+            <span class="q-badge">Navigate</span>
+          </button>
+          <button class="q-btn q-crowd" id="qb-crowd" onclick="triggerQuickAction('crowd')">
+            <span class="q-icon">👥</span>
+            <span class="q-label">Crowd</span>
+            <span class="q-badge" id="qb-crowd-badge">Updating</span>
+          </button>
+          <button class="q-btn q-ai" id="qb-ai" onclick="toggleChat()">
+            <span class="q-icon">🤖</span>
+            <span class="q-label">Ask AI</span>
+            <span class="q-badge">Chat</span>
+          </button>
+        </div>
+
+        <!-- Response card -->
+        <div class="response-card" id="response-card" style="display:none">
+          <div class="rc-icon" id="rc-icon">🤖</div>
+          <div class="rc-content">
+            <p class="rc-text" id="rc-text"></p>
+          </div>
+          <button class="rc-close" onclick="closeResponseCard()">✕</button>
+        </div>
+      </div>
+
+      <!-- AI Tips -->
+      <div class="card" id="tips-card">
+        <div class="card-header">
+          <span class="card-icon">💡</span>
+          <h2 class="card-title">AI Tips</h2>
+          <span class="ml-auto rotating" id="tips-refresh-icon">↻</span>
+        </div>
+        <div class="tips-list" id="tips-list">
+          <!-- dynamically inserted -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ===== FLOATING AI CHAT BUTTON ===== -->
+  <button class="fab" id="fab-btn" onclick="toggleChat()" aria-label="Open AI Assistant">
+    <span class="fab-inner">
+      <span class="fab-icon open-icon">🤖</span>
+      <span class="fab-icon close-icon" style="display:none">✕</span>
+    </span>
+    <span class="fab-pulse"></span>
+    <span class="fab-label">AI Chat</span>
+  </button>
+
+  <!-- ===== FLOATING CHAT PANEL ===== -->
+  <div class="chat-panel" id="chat-panel" aria-hidden="true">
+    <div class="cp-header">
+      <div class="cp-avatar">🤖</div>
+      <div class="cp-info">
+        <p class="cp-name">Stadium AI</p>
+        <p class="cp-status" id="cp-status">Online — ready</p>
+      </div>
+      <button class="cp-clear" onclick="clearChatPanel()" title="Clear chat">🗑</button>
+    </div>
+
+    <div class="cp-messages" id="cp-messages" role="log" aria-live="polite">
+      <!-- initial message injected via JS -->
+    </div>
+
+    <div class="cp-quick">
+      <button class="cpq-btn" onclick="chatQuick('food')">🍔 Food</button>
+      <button class="cpq-btn" onclick="chatQuick('toilet')">🚻 Wash</button>
+      <button class="cpq-btn" onclick="chatQuick('exit')">🚪 Exit</button>
+      <button class="cpq-btn" onclick="chatQuick('crowd')">👥 Crowd</button>
+    </div>
+
+    <div class="cp-input-row">
+      <button class="cp-mic-btn" id="cp-mic-btn" onclick="toggleVoice()" title="Voice input" aria-label="Voice input">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <rect x="9" y="2" width="6" height="11" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="8" y1="22" x2="16" y2="22"/>
+        </svg>
+      </button>
+      <input type="text" id="cp-input" class="cp-input" placeholder="Ask anything…" autocomplete="off" onkeydown="chatKey(event)" />
+      <button class="cp-send-btn" id="cp-send-btn" onclick="chatSend()" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Voice Banner -->
+  <div class="voice-banner" id="voice-banner" style="display:none">
+    <div class="vb-inner">
+      <div class="vb-waves">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <p>Listening… speak your query</p>
+      <button onclick="stopVoice()">Stop</button>
+    </div>
+  </div>
+
+  <!-- Emergency Overlay -->
+  <div class="emg-overlay" id="emg-overlay" style="display:none" onclick="cancelEmergency()">
+    <div class="emg-modal" onclick="event.stopPropagation()">
+      <div class="emg-modal-header">
+        <span class="emg-siren">🚨</span>
+        <h2>EMERGENCY EVACUATION</h2>
+        <span class="emg-siren">🚨</span>
+      </div>
+      <div class="emg-route" id="emg-route">
+        <div class="emg-route-step">
+          <div class="er-step-num">1</div>
+          <div class="er-step-text">Remain calm — follow illuminated floor paths</div>
+        </div>
+        <div class="emg-route-step">
+          <div class="er-step-num">2</div>
+          <div class="er-step-text">Proceed to <strong>Gate 4 (WEST)</strong> — currently <span class="green-text">CLEAR</span></div>
+        </div>
+        <div class="emg-route-step">
+          <div class="er-step-num">3</div>
+          <div class="er-step-text">Avoid Gate 2 — congestion detected</div>
+        </div>
+        <div class="emg-route-step">
+          <div class="er-step-num">4</div>
+          <div class="er-step-text">Assembly point: <strong>West Parking Lot A</strong></div>
+        </div>
+      </div>
+      <div class="emg-eta">
+        <span class="emg-eta-label">Est. Evacuation Time</span>
+        <span class="emg-eta-val" id="emg-eta-val">4 min 20 sec</span>
+      </div>
+      <button class="emg-cancel-btn" onclick="cancelEmergency()">✕ Cancel Emergency Mode</button>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>Smart Stadium Assistant &copy; 2026 &mdash; Powered by AI-driven venue intelligence</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
